@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Upload Note</title>
+    <!-- Temporary inline styles. We'll move to style.css later. -->
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; min-height: 90vh;}
+        .container { background-color: #fff; padding: 25px 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 400px; } /* Wider container */
+        h1 { text-align: center; color: #333; margin-bottom: 20px; font-size: 1.8em;}
+        label { display: block; margin-bottom: 6px; color: #555; font-weight: bold; font-size: 0.9em;}
+        input[type="text"], input[type="number"], select, input[type="file"] { width: calc(100% - 22px); padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        input[type="submit"] { background-color: #337ab7; color: white; padding: 12px 15px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1em; font-weight: bold;}
+        input[type="submit"]:hover { background-color: #286090; }
+        .message { padding: 10px; margin-bottom: 15px; border-radius: 3px; font-size: 0.9em; text-align: center;}
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;}
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;}
+        .dashboard-link { text-align: center; margin-top: 20px; font-size: 0.9em; }
+        .dashboard-link a { color: #007bff; text-decoration: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload New Note</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- enctype="multipart/form-data" is CRUCIAL for file uploads -->
+        <form method="POST" action="{{ url_for('admin_upload_note') }}" enctype="multipart/form-data">
+            <div>
+                <label for="title">Note Title:</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            <div>
+                <label for="year">Academic Year:</label>
+                <select id="year" name="year" required>
+                    <option value="">-- Select Year --</option>
+                    <option value="1">1st Year</option>
+                    <option value="2">2nd Year</option>
+                    <option value="3">3rd Year</option>
+                    <option value="4">4th Year</option>
+                    <!-- Add more years if needed -->
+                </select>
+            </div>
+            <div>
+                <label for="course_name">Course Name/Code:</label>
+                <input type="text" id="course_name" name="course_name" placeholder="e.g., MA101 Calculus" required>
+            </div>
+            <div>
+                <label for="pdf_file">Select PDF File:</label>
+                <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required>
+            </div>
+            <div>
+                <input type="submit" value="Upload Note">
+            </div>
+        </form>
+        <div class="dashboard-link">
+            <p><a href="{{ url_for('dashboard') }}">Back to Dashboard</a></p>
+        </div>
+    </div>
+</body>
+</html>
