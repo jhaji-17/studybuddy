@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF--8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Notes Website</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
+        .container { max-width: 900px; margin: auto; background-color: #fff; padding: 20px 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom:15px; border-bottom: 1px solid #eee;}
+        header h1 { margin: 0; color: #333; font-size: 1.8em; }
+        header a.logout-link { color: #d9534f; text-decoration: none; font-weight: bold; border: 1px solid #d9534f; padding: 8px 12px; border-radius: 4px; transition: background-color 0.2s, color 0.2s; }
+        header a.logout-link:hover { background-color: #d9534f; color: white; }
+        h2.welcome-message { text-align: center; color: #555; font-weight: normal; margin-bottom: 30px; }
+        .nav-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; text-align: center; }
+        .nav-grid a { display: block; background-color: #337ab7; color: white; padding: 30px 20px; text-decoration: none; border-radius: 8px; font-size: 1.1em; font-weight: bold; transition: background-color 0.2s, transform 0.2s; }
+        .nav-grid a:hover { background-color: #286090; transform: translateY(-3px); }
+        .admin-link-container { text-align: center; margin-top: 40px; border-top: 1px solid #eee; padding-top: 20px;}
+        .admin-link-container a { font-size: 1.1em; background-color: #5bc0de; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;}
+        .admin-link-container a:hover { background-color: #31b0d5; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Notes Dashboard</h1>
+            <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+        </header>
+
+        <h2 class="welcome-message">Welcome, {{ session.username }}! Please select a department.</h2>
+
+        <div class="nav-grid">
+            <!-- Links will point to a new route we will create called 'show_department_years' -->
+            <a href="{{ url_for('show_department_years', department_name='Computer Science Engineering') }}">Computer Science Engineering</a>
+            <a href="{{ url_for('show_department_years', department_name='Electronics and Communication Engineering') }}">Electronics and Communication Engineering</a>
+            <a href="{{ url_for('show_department_years', department_name='Electrical and Electronics Engineering') }}">Electrical and Electronics Engineering</a>
+            <a href="{{ url_for('show_department_years', department_name='Mechanical Engineering') }}">Mechanical Engineering</a>
+            <a href="{{ url_for('show_department_years', department_name='Civil Engineering') }}">Civil Engineering</a>
+        </div>
+
+        {% if session.get('is_admin') %}
+            <div class="admin-link-container">
+                <a href="{{ url_for('admin_upload_note') }}">Go to Admin Upload Panel</a>
+            </div>
+        {% endif %}
+    </div>
+</body>
+</html>
