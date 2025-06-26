@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ department_name }} - Notes</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
+        .container { max-width: 900px; margin: auto; background-color: #fff; padding: 20px 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom:15px; border-bottom: 1px solid #eee;}
+        header h1 { margin: 0; color: #333; font-size: 1.8em; }
+        .nav-links a { margin-left: 15px; color: #007bff; text-decoration: none; font-weight: bold; }
+        .nav-links a:hover { text-decoration: underline; }
+        .breadcrumb { font-size: 0.9em; color: #777; margin-bottom: 20px; }
+        .breadcrumb a { color: #007bff; }
+        .year-list { list-style: none; padding: 0; }
+        .year-list li { margin-bottom: 15px; }
+        .year-list a { display: block; background-color: #5bc0de; color: white; padding: 20px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background-color 0.2s; }
+        .year-list a:hover { background-color: #31b0d5; }
+        .year-list a.pyq-link { background-color: #f0ad4e; }
+        .year-list a.pyq-link:hover { background-color: #ec971f; }
+        .no-content { color: #777; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>{{ department_name }}</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </header>
+
+        <p class="breadcrumb"><a href="{{ url_for('dashboard') }}">Departments</a> » {{ department_name }}</p>
+
+        {% if years %}
+            <ul class="year-list">
+                {% for year in years %}
+                    {% if year.year == 5 %}
+                        <li>
+                            <a href="{{ url_for('show_year_courses', department_name=department_name, year_num=year.year) }}" class="pyq-link">
+                                PYQs (Previous Year Questions)
+                            </a>
+                        </li>
+                    {% else %}
+                        <li>
+                            <a href="{{ url_for('show_year_courses', department_name=department_name, year_num=year.year) }}">
+                                {{ year.year }}{{ 'st' if year.year == 1 else ('nd' if year.year == 2 else ('rd' if year.year == 3 else 'th')) }} Year
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="no-content">No notes have been uploaded for this department yet.</p>
+        {% endif %}
+
+    </div>
+</body>
+</html>

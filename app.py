@@ -108,10 +108,24 @@ def dashboard():
 
 # NEW Placeholder Route for our Department logic
 @app.route('/department/<department_name>')
+# Find the old @app.route('/department/<department_name>') placeholder and REPLACE it with this:
+@app.route('/department/<department_name>')
 def show_department_years(department_name):
-    # This is a placeholder for Step 7.
-    return f"This will show academic years for the department: {department_name}"
+    if 'user_id' not in session:
+        flash('You need to be logged in to access this page.', 'warning')
+        return redirect(url_for('login'))
 
+    db = get_db()
+    # Find all distinct years for the selected department
+    years_cursor = db.execute(
+        "SELECT DISTINCT year FROM notes WHERE department = ? ORDER BY year ASC",
+        (department_name,)
+    )
+    years = years_cursor.fetchall()
+
+    return render_template('department_years.html', 
+                           department_name=department_name, 
+                           years=years)
 @app.route('/logout')
 def logout():
     session.clear()
@@ -162,7 +176,11 @@ def admin_upload_note():
         else:
             flash('Invalid file type. Only PDF files are allowed.', 'error')
     return render_template('admin_upload.html')
-
+# ADD THIS NEW PLACEHOLDER ROUTE FOR STEP 8
+@app.route('/department/<department_name>/year/<int:year_num>')
+def show_year_courses(department_name, year_num):
+    # This is a placeholder for Step 8.
+    return f"This will show courses for Department: {department_name}, Year: {year_num}"
 if __name__ == '__main__':
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
