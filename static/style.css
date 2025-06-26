@@ -20,6 +20,8 @@
     --text-primary: #2c3e50; /* Dark, readable text */
     --text-secondary: #7f8c8d; /* For subtitles and helper text */
     --border-color: #ecf0f1;
+    --primary-bg-light: rgba(52, 152, 219, 0.1); /* Light, semi-transparent version of primary blue */
+
 
     --box-shadow-soft: 0 4px 6px rgba(0, 0, 0, 0.05);
     --box-shadow-lifted: 0 10px 20px rgba(41, 128, 185, 0.15), 0 3px 6px rgba(0, 0, 0, 0.1);
@@ -220,30 +222,25 @@ input[type="submit"].button {
     border-top: 1px solid var(--border-color);
     color: var(--text-secondary);
 }
-/* --- USE THIS NEW, BETTER CODE --- */
 .form-footer-link a {
     display: inline-block;
     margin-top: 10px;
-    padding: 10px 25px;
+    padding: 12px 25px;
     font-weight: 600;
     text-decoration: none;
     border-radius: 50px;
-    transition: var(--transition-fast);
-    
-    /* --- The Key Changes --- */
-    color: var(--secondary-color); /* Use the subtle grey for text */
-    border: 2px solid var(--border-color); /* Use the lightest grey for the border */
-    background-color: var(--surface-color); /* Match the container background */
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+    background-color: var(--primary-bg-light);
+    color: var(--primary-color);
+    border: 2px solid transparent;
 }
-
 .form-footer-link a:hover {
-    /* On hover, transform it into the primary action style! */
     background-color: var(--primary-color);
-    border-color: var(--primary-color);
     color: #fff;
     transform: translateY(-2px);
-    box-shadow: var(--box-shadow-lifted);
+    box-shadow: 0 4px 10px rgba(52, 152, 219, 0.3);
 }
+
 /* --- Navigation Grids and Lists --- */
 .welcome-message {
     text-align: center;
