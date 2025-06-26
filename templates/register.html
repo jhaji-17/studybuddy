@@ -1,58 +1,44 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Notes Website</title>
-    <!-- We'll link to style.css later -->
-    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> -->
-    <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f4; }
-        .container { background-color: #fff; padding: 20px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 300px; margin: auto; }
-        h1 { text-align: center; color: #333; }
-        label { display: block; margin-bottom: 5px; color: #555;}
-        input[type="text"], input[type="password"] { width: 95%; padding: 10px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 3px; }
-        input[type="submit"] { background-color: #5cb85c; color: white; padding: 10px 15px; border: none; border-radius: 3px; cursor: pointer; width: 100%;}
-        input[type="submit"]:hover { background-color: #4cae4c; }
-        .message { padding: 10px; margin-bottom: 15px; border-radius: 3px; }
-        .error { background-color: #f2dede; color: #a94442; border: 1px solid #ebccd1;}
-        .login-link { text-align: center; margin-top: 15px; }
-        .login-link a { color: #007bff; text-decoration: none; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Register New Account</h1>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register - StudyBuddy</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> </head>
+ <body>
+     <div class="container auth-container">
+         <h1>Register New Account</h1>
 
-        <!-- Flash messages will appear here -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="message {{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+         {% with messages = get_flashed_messages(with_categories=true) %}
+             {% if messages %}
+                 {% for category, message in messages %}
+                     <div class="message {{ category }}">{{ message }}</div>
+                 {% endfor %}
+             {% endif %}
+         {% endwith %}
 
-        <form method="POST" action="{{ url_for('register') }}">
-            <div>
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required>
-            </div>
-            <div>
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <div>
-                <label for="confirm_password">Confirm Password:</label>
-                <input type="password" id="confirm_password" name="confirm_password" required>
-            </div>
-            <div>
-                <input type="submit" value="Register">
-            </div>
-        </form>
-        <div class="login-link">
-            <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
-        </div>
-    </div>
-</body>
-</html>
+         <form method="POST" action="{{ url_for('register') }}">
+             <div class="form-group">
+                 <label for="username">Username:</label>
+                 <input type="text" id="username" name="username" required>
+             </div>
+             <div class="form-group">
+                 <label for="password">Password:</label>
+                 <input type="password" id="password" name="password" required>
+             </div>
+             <div class="form-group">
+                 <label for="confirm_password">Confirm Password:</label>
+                 <input type="password" id="confirm_password" name="confirm_password" required>
+             </div>
+             <div>
+                 <input type="submit" value="Register" class="button button-success">
+             </div>
+         </form>
+         <div class="form-footer-link">
+             <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+         </div>
+     </div>
+ </body>
+ </html>
+ ```

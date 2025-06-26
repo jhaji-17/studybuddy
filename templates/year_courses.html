@@ -1,63 +1,47 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ department_name }} - {{ 'PYQs' if year_num == 5 else year_num ~ ('st' if year_num == 1 else ('nd' if year_num == 2 else ('rd' if year_num == 3 else 'th'))) ~ ' Year' }}</title>
-    <style>
-        body { font-family: sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
-        .container { max-width: 900px; margin: auto; background-color: #fff; padding: 20px 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom:15px; border-bottom: 1px solid #eee;}
-        header h1 { margin: 0; color: #333; font-size: 1.8em; }
-        .nav-links a { margin-left: 15px; color: #007bff; text-decoration: none; font-weight: bold; }
-        .nav-links a:hover { text-decoration: underline; }
-        .breadcrumb { font-size: 0.9em; color: #777; margin-bottom: 20px; }
-        .breadcrumb a { color: #007bff; }
-        .course-list { list-style: none; padding: 0; }
-        .course-list li { margin-bottom: 10px; }
-        .course-list a { display: block; background-color: #5cb85c; color: white; padding: 15px; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background-color 0.2s; }
-        .course-list a:hover { background-color: #4cae4c; }
-        .no-content { color: #777; font-style: italic; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>
-                <!-- Display custom title for PYQs (Year 5) -->
-                {% if year_num == 5 %}
-                    Previous Year Questions
-                {% else %}
-                    {{ year_num }}{{ 'st' if year_num == 1 else ('nd' if year_num == 2 else ('rd' if year_num == 3 else 'th')) }} Year Courses
-                {% endif %}
-            </h1>
-            <div class="nav-links">
-                <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
-                <a href="{{ url_for('logout') }}">Logout</a>
-            </div>
-        </header>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ department_name }} - {{ 'PYQs' if year_num == 5 else year_num ~ ('st' if year_num == 1 else ('nd' if year_num == 2 else ('rd' if year_num == 3 else 'th'))) ~ ' Year' }}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+ </head>
+ <body>
+     <div class="container">
+         <header>
+             <h1>
+                 {% if year_num == 5 %}
+                     Previous Year Questions
+                 {% else %}
+                     {{ year_num }}{{ 'st' if year_num == 1 else ('nd' if year_num == 2 else ('rd' if year_num == 3 else 'th')) }} Year Courses
+                 {% endif %}
+             </h1>
+             <div class="nav-links">
+                 <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                 <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+             </div>
+         </header>
 
-        <p class="breadcrumb">
-            <a href="{{ url_for('dashboard') }}">Departments</a> » 
-            <a href="{{ url_for('show_department_years', department_name=department_name) }}">{{ department_name }}</a> »
-            {% if year_num == 5 %} PYQs {% else %} {{ year_num }} Year {% endif %}
-        </p>
+         <p class="breadcrumb">
+             <a href="{{ url_for('dashboard') }}">Departments</a> » 
+             <a href="{{ url_for('show_department_years', department_name=department_name) }}">{{ department_name }}</a> »
+             {% if year_num == 5 %} PYQs {% else %} {{ year_num }} Year {% endif %}
+         </p>
 
-        {% if courses %}
-            <ul class="course-list">
-                {% for course in courses %}
-                    <li>
-                        <!-- Links will point to a new route we will create called 'show_course_notes' -->
-                        <a href="{{ url_for('show_course_notes', department_name=department_name, year_num=year_num, course_name=course.course_name) }}">
-                            {{ course.course_name }}
-                        </a>
-                    </li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <p class="no-content">No courses found for this year in this department.</p>
-        {% endif %}
-
-    </div>
-</body>
-</html>
+         {% if courses %}
+             <ul class="nav-list">
+                 {% for course in courses %}
+                     <li>
+                         <a href="{{ url_for('show_course_notes', department_name=department_name, year_num=year_num, course_name=course.course_name) }}">
+                             {{ course.course_name }}
+                         </a>
+                     </li>
+                 {% endfor %}
+             </ul>
+         {% else %}
+             <p class="no-content">No courses found for this year in this department.</p>
+         {% endif %}
+     </div>
+ </body>
+ </html>
+ ```
