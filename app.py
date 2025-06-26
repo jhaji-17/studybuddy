@@ -1,7 +1,7 @@
 import sqlite3
 import os
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request, redirect, url_for, session, g, flash
+from flask import Flask, render_template, request, redirect, url_for, session, g, flash, send_from_directory
 
 app = Flask(__name__)
 # Make sure to replace this with your own unique key
@@ -96,43 +96,93 @@ def login():
         flash(error, 'error')
     return render_template('login.html')
 
-# UPDATED Dashboard Route
+# Final Dashboard Route (shows departments)
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
         flash('You need to be logged in to access the dashboard.', 'warning')
         return redirect(url_for('login'))
-    
-    # This function just shows the main department selection page.
     return render_template('dashboard.html')
 
-# NEW Placeholder Route for our Department logic
-@app.route('/department/<department_name>')
-# Find the old @app.route('/department/<department_name>') placeholder and REPLACE it with this:
+# Final Department Page Route (shows years)
 @app.route('/department/<department_name>')
 def show_department_years(department_name):
     if 'user_id' not in session:
         flash('You need to be logged in to access this page.', 'warning')
         return redirect(url_for('login'))
-
     db = get_db()
-    # Find all distinct years for the selected department
     years_cursor = db.execute(
         "SELECT DISTINCT year FROM notes WHERE department = ? ORDER BY year ASC",
         (department_name,)
     )
     years = years_cursor.fetchall()
-
     return render_template('department_years.html', 
                            department_name=department_name, 
                            years=years)
+
+# Final Year Page Route (shows courses)
+@app.route('/department/<department_name>/year/<int:year_num>')
+def show_year_courses(department_name, year_num):
+    if 'user_id' not in session:
+        flash('You need to be logged in to access this page.', 'warning')
+        return redirect(url_for('login'))
+    db = get_db()
+    courses_cursor = db.execute(
+        "SELECT DISTINCT course_name FROM notes WHERE department = ? AND year = ? ORDER BY course_name ASC",
+        (department_name, year_num)
+    )
+    courses = courses_cursor.fetchall()
+    return render_template('year_courses.html', 
+                           department_name=department_name, 
+                           year_num=year_num, 
+                           courses=courses)
+
+# Final Course Page Route (shows notes)
+@app.route('/department/<department_name>/year/<int:year_num>/course/<course_name>')
+def show_course_notes(department_name, year_num, course_name):
+    if 'user_id' not in session:
+        flash('You need to be logged in to access this page.', 'warning')
+        return redirect(url_for('login'))
+    db = get_db()
+    notes_cursor = db.execute(
+        "SELECT id, title, uploaded_at FROM notes WHERE department = ? AND year = ? AND course_name = ? ORDER BY title ASC",
+        (department_name, year_num, course_name)
+    )
+    notes = notes_cursor.fetchall()
+    return render_template('course_notes.html',
+                           department_name=department_name,
+                           year_num=year_num,
+                           course_name=course_name,
+                           notes=notes)
+
+# Final Download Route
+@app.route('/download/<int:note_id>')
+def download_note(note_id):
+    if 'user_id' not in session:
+        flash('You must be logged in to download notes.', 'warning')
+        return redirect(url_for('login'))
+    db = get_db()
+    note = db.execute(
+        "SELECT filename FROM notes WHERE id = ?", (note_id,)
+    ).fetchone()
+    if note is None:
+        flash('Note not found.', 'error')
+        return redirect(url_for('dashboard'))
+    try:
+        return send_from_directory(app.config['UPLOAD_FOLDER'],
+                                   note['filename'],
+                                   as_attachment=True)
+    except FileNotFoundError:
+        flash('File not found on server. It may have been moved or deleted.', 'error')
+        return redirect(url_for('dashboard'))
+
 @app.route('/logout')
 def logout():
     session.clear()
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
-# UPDATED Admin Upload Route
+# Final Admin Upload Route
 @app.route('/admin/upload', methods=['GET', 'POST'])
 def admin_upload_note():
     if 'user_id' not in session or not session.get('is_admin'):
@@ -176,11 +226,7 @@ def admin_upload_note():
         else:
             flash('Invalid file type. Only PDF files are allowed.', 'error')
     return render_template('admin_upload.html')
-# ADD THIS NEW PLACEHOLDER ROUTE FOR STEP 8
-@app.route('/department/<department_name>/year/<int:year_num>')
-def show_year_courses(department_name, year_num):
-    # This is a placeholder for Step 8.
-    return f"This will show courses for Department: {department_name}, Year: {year_num}"
+
 if __name__ == '__main__':
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)

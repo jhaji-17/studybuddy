@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ course_name }} - Notes</title>
+    <style>
+        body { font-family: sans-serif; margin: 0; padding: 20px; background-color: #f4f4f4; }
+        .container { max-width: 900px; margin: auto; background-color: #fff; padding: 20px 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom:15px; border-bottom: 1px solid #eee;}
+        header h1 { margin: 0; color: #333; font-size: 1.8em; }
+        .nav-links a { margin-left: 15px; color: #007bff; text-decoration: none; font-weight: bold; }
+        .nav-links a:hover { text-decoration: underline; }
+        .breadcrumb { font-size: 0.9em; color: #777; margin-bottom: 20px; }
+        .breadcrumb a { color: #007bff; }
+        .note-list { list-style: none; padding: 0; }
+        .note-list li { background-color: #fdfdfd; padding: 12px 15px; border: 1px solid #eee; border-radius: 4px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .note-list li .note-title { font-weight: bold; color: #333; font-size: 1.1em;}
+        .note-list li .note-details { font-size: 0.8em; color: #999; }
+        .note-list li a.download-link { background-color: #5cb85c; color: white; padding: 8px 15px; text-decoration: none; border-radius: 4px; font-size: 0.9em; white-space: nowrap; }
+        .note-list li a.download-link:hover { background-color: #4cae4c; }
+        .no-content { color: #777; font-style: italic; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>{{ course_name }}</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+                <a href="{{ url_for('logout') }}">Logout</a>
+            </div>
+        </header>
+
+        <p class="breadcrumb">
+            <a href="{{ url_for('dashboard') }}">Departments</a> » 
+            <a href="{{ url_for('show_department_years', department_name=department_name) }}">{{ department_name }}</a> »
+            <a href="{{ url_for('show_year_courses', department_name=department_name, year_num=year_num) }}">
+                {% if year_num == 5 %} PYQs {% else %} {{ year_num }} Year {% endif %}
+            </a> »
+            {{ course_name }}
+        </p>
+
+        {% if notes %}
+            <ul class="note-list">
+                {% for note in notes %}
+                    <li>
+                        <div>
+                            <span class="note-title">{{ note.title }}</span><br>
+                            <span class="note-details">Uploaded: {{ note.uploaded_at.split(' ')[0] }}</span>
+                        </div>
+                        <!-- This link will now work! -->
+                        <a href="{{ url_for('download_note', note_id=note.id) }}" class="download-link">Download PDF</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="no-content">No specific notes found for this course.</p>
+        {% endif %}
+
+    </div>
+</body>
+</html>
