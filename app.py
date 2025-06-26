@@ -230,4 +230,5 @@ def admin_upload_note():
 if __name__ == '__main__':
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
-    app.run(debug=True)
+    # NEW line
+app.run(host='0.0.0.0', debug=True)
