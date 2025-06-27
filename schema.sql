@@ -21,7 +21,7 @@ CREATE TABLE notes (
     filename TEXT UNIQUE NOT NULL,
     file_size INTEGER NOT NULL,
     uploader_id INTEGER NOT NULL,
-    uploaded_at TIMESTAMP NOT NULL, -- REMOVED: DEFAULT CURRENT_TIMESTAMP
+    uploaded_at TIMESTAMP NOT NULL,
     FOREIGN KEY (uploader_id) REFERENCES users (id)
 );
 
@@ -31,9 +31,12 @@ CREATE TABLE activity (
     user_id INTEGER NOT NULL,
     action_type TEXT NOT NULL,
     description TEXT NOT NULL,
-    timestamp TIMESTAMP NOT NULL, -- REMOVED: DEFAULT CURRENT_TIMESTAMP
+    timestamp TIMESTAMP NOT NULL,
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
--- Create a default admin user for initial setup
--- The password is 'admin' (stored in plain text)
+--
+-- THIS IS THE NEW LINE YOU NEED TO ADD
+-- Create a default admin user for initial setup. Password is 'admin'
+--
+INSERT INTO users (username, password, is_admin) VALUES ('admin', 'password', 1);
