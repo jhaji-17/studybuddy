@@ -8,22 +8,28 @@ from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, session, g, flash, send_from_directory
 from flask_mail import Mail, Message
 
+# --- For loading environment variables ---
+from dotenv import load_dotenv
+load_dotenv()
+# ----------------------------------------
+
 app = Flask(__name__)
-app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+# Load secret key from environment variable. The second argument is a default for local development.
+app.secret_key = os.getenv('SECRET_KEY', 'a_default_fallback_key_for_development') 
 DATABASE = 'users.db'
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# --- SENDGRID CONFIGURATION ---
+# --- SECURE SENDGRID CONFIGURATION using environment variables ---
 app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'apikey'
-app.config['MAIL_PASSWORD'] = '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'
-app.config['MAIL_DEFAULT_SENDER'] = 'studdybuddy845@gmail.com'
-# -----------------------------
+app.config['MAIL_PASSWORD'] = os.getenv('SENDGRID_API_KEY') # Reads securely from .env
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER') # Reads securely from .env
+# -------------------------------------------------------------
 
 mail = Mail(app)
 
@@ -70,7 +76,7 @@ def log_activity(user_id, action_type, description):
     )
     db.commit()
 
-# --- Routes ---
+# --- Routes (Unchanged) ---
 
 @app.route('/')
 def home():
@@ -79,7 +85,6 @@ def home():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    # This route is unchanged from the previous step
     if 'user_id' in session: return redirect(url_for('dashboard'))
     if request.method == 'POST':
         username = request.form['username']
@@ -125,7 +130,6 @@ def register():
 
 @app.route('/verify', methods=['GET', 'POST'])
 def verify():
-    # This route is unchanged from the previous step
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
     if 'username_to_verify' not in session:
@@ -167,31 +171,22 @@ def verify():
             flash(error, 'error')
     return render_template('verify.html')
 
-
-# --- UPDATED /login ROUTE ---
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if 'user_id' in session: return redirect(url_for('dashboard'))
-    
     if request.method == 'POST':
         username = request.form['username']
         password_attempt = request.form['password']
         error = None
         db = get_db()
         user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-
         if user is None or user['password'] != password_attempt:
             error = 'Incorrect username or password.'
-        
-        # --- NEW VERIFICATION CHECK ---
         elif not user['is_verified']:
             error = "Your account has not been verified. Please check your email for the verification code."
-            # Store username in session so we can send them to the verify page
             session['username_to_verify'] = user['username']
-            flash(error, 'warning') # Use 'warning' category for better styling
+            flash(error, 'warning')
             return redirect(url_for('verify'))
-        # --- END OF NEW CHECK ---
-
         if error is None:
             session.clear()
             session['user_id'] = user['id']
@@ -200,14 +195,9 @@ def login():
             log_activity(user['id'], 'login', 'You logged in to StudyBuddy')
             flash('Login successful!', 'success')
             return redirect(url_for('dashboard'))
-            
         flash(error, 'error')
-        
     return render_template('login.html')
-# --- END OF UPDATED ROUTE ---
 
-
-# --- All other routes below this are unchanged ---
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('login'))
