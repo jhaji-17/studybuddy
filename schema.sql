@@ -3,15 +3,19 @@ DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS notes;
 DROP TABLE IF EXISTS activity;
 
--- User table with INSECURE plain text password and admin flag
+-- User table with INSECURE plain text password and new columns for email verification
 CREATE TABLE users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL, -- Storing plain text passwords is NOT recommended
-    is_admin BOOLEAN NOT NULL DEFAULT 0
+    email TEXT UNIQUE NOT NULL,                      -- NEW: To store user's email
+    password TEXT NOT NULL,                          -- Storing plain text passwords is NOT recommended
+    is_admin BOOLEAN NOT NULL DEFAULT 0,
+    is_verified BOOLEAN NOT NULL DEFAULT 0,          -- NEW: Tracks if the user is verified (0=No, 1=Yes)
+    verification_code TEXT,                          -- NEW: Stores the 6-digit code sent via email
+    code_expiry TIMESTAMP                            -- NEW: Stores the time when the code becomes invalid
 );
 
--- Notes table with an explicit timestamp (no default)
+-- Notes table (This table remains unchanged)
 CREATE TABLE notes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
@@ -25,7 +29,7 @@ CREATE TABLE notes (
     FOREIGN KEY (uploader_id) REFERENCES users (id)
 );
 
--- Activity table with an explicit timestamp (no default)
+-- Activity table (This table remains unchanged)
 CREATE TABLE activity (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -35,8 +39,8 @@ CREATE TABLE activity (
     FOREIGN KEY (user_id) REFERENCES users (id)
 );
 
---
--- THIS IS THE NEW LINE YOU NEED TO ADD
--- Create a default admin user for initial setup. Password is 'admin'
---
-INSERT INTO users (username, password, is_admin) VALUES ('admin', 'password', 1);
+-- Create a default admin user for initial setup.
+-- This admin user is pre-verified.
+-- IMPORTANT: The admin user needs a valid email, even if it's a placeholder.
+INSERT INTO users (username, email, password, is_admin, is_verified) 
+VALUES ('admin', 'admin@example.com', 'YourNewPasswordHere', 1, 1);

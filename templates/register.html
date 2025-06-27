@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Register - StudyBuddy</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> </head>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
  <body>
      <div class="container auth-container">
          <h1>Register New Account</h1>
@@ -22,14 +23,19 @@
                  <label for="username">Username:</label>
                  <input type="text" id="username" name="username" required>
              </div>
+
+             <!-- NEW EMAIL FIELD ADDED HERE -->
+             <div class="form-group">
+                <label for="email">Email Address:</label>
+                <input type="email" id="email" name="email" required>
+             </div>
+             <!-- END OF NEW FIELD -->
+
              <div class="form-group">
                  <label for="password">Password:</label>
                  <input type="password" id="password" name="password" required>
-                 <div class="progress-container" style="margin-top: 8px;">
-                     <div class="progress-bar" id="passwordStrength"></div>
-                 </div>
                  <div id="passwordTips" class="text-secondary" style="font-size: 0.85rem; margin-top: 8px;">
-                     Use at least 8 characters with a mix of letters, numbers & symbols
+                     Use at least 8 characters.
                  </div>
              </div>
              <div class="form-group">
@@ -37,29 +43,12 @@
                  <input type="password" id="confirm_password" name="confirm_password" required>
              </div>
              <div>
-                 <input type="submit" value="Register" class="button button-success">
+                 <button type="submit" class="button button-success">Register</button>
              </div>
          </form>
          <div class="form-footer-link">
              <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
          </div>
      </div>
-     
-     <script>
-        document.getElementById('password').addEventListener('input', function() {
-            const password = this.value;
-            let strength = 0;
-            
-            if (password.length >= 8) strength += 25;
-            if (/[A-Z]/.test(password)) strength += 25;
-            if (/[0-9]/.test(password)) strength += 25;
-            if (/[^A-Za-z0-9]/.test(password)) strength += 25;
-            
-            document.getElementById('passwordStrength').style.width = `${strength}%`;
-            document.getElementById('passwordStrength').style.background = 
-                strength < 50 ? 'var(--danger-color)' : 
-                strength < 75 ? 'var(--warning-color)' : 'var(--success-color)';
-        });
-    </script>
  </body>
  </html>
