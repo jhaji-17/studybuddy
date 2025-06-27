@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Upload Note</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div class="container">
@@ -12,7 +13,7 @@
             <h1>Upload New Note</h1>
             <div class="nav-links">
                 <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+                <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </header>
 
@@ -30,7 +31,6 @@
                 <input type="text" id="title" name="title" required>
             </div>
 
-            <!-- UPDATED DEPARTMENT FIELD: Changed from input to select -->
             <div class="form-group">
                 <label for="department">Department:</label>
                 <select id="department" name="department" required>
@@ -42,7 +42,6 @@
                     <option value="Civil Engineering">Civil Engineering</option>
                 </select>
             </div>
-            <!-- END OF UPDATED DEPARTMENT FIELD -->
 
             <div class="form-group">
                 <label for="year">Academic Year:</label>
@@ -61,12 +60,33 @@
             </div>
             <div class="form-group">
                 <label for="pdf_file">Select PDF File:</label>
-                <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required>
+                <div class="file-input-wrapper">
+                    <input type="file" id="pdf_file" name="pdf_file" accept=".pdf" required>
+                    <label for="pdf_file" class="file-input-label" id="fileLabel">
+                        <i class="fas fa-file-pdf"></i> Choose a PDF file
+                    </label>
+                </div>
+                <div id="fileName" class="text-secondary" style="margin-top: 8px;"></div>
             </div>
             <div class="form-group">
-                <input type="submit" value="Upload Note" class="button button-primary">
+                <button type="submit" class="button button-primary">
+                    <i class="fas fa-upload"></i> Upload Note
+                </button>
             </div>
         </form>
     </div>
+
+    <script>
+        document.getElementById('pdf_file').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('fileName').textContent = `Selected: ${file.name}`;
+                document.getElementById('fileLabel').innerHTML = `<i class="fas fa-file-pdf"></i> Change File`;
+            } else {
+                document.getElementById('fileName').textContent = '';
+                document.getElementById('fileLabel').innerHTML = `<i class="fas fa-file-pdf"></i> Choose a PDF file`;
+            }
+        });
+    </script>
 </body>
 </html>

@@ -4,14 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ course_name }} - Notes</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}"> </head>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
  <body>
      <div class="container">
          <header>
              <h1>{{ course_name }}</h1>
              <div class="nav-links">
                  <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                 <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
+                 <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
              </div>
          </header>
 
@@ -24,15 +26,38 @@
              {{ course_name }}
          </p>
 
+         <div class="form-group" style="margin-bottom: 20px;">
+            <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <div style="flex: 1; min-width: 200px;">
+                    <input type="text" id="searchInput" placeholder="Search notes..." class="form-group" style="margin-bottom: 0;">
+                </div>
+                <div>
+                    <select id="sortSelect" class="form-group" style="margin-bottom: 0;">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                        <option value="title">Title (A-Z)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
          {% if notes %}
-             <ul class="note-list">
+             <ul class="note-list" id="notesList">
                  {% for note in notes %}
-                     <li>
+                     <li class="note-item" data-title="{{ note.title }}" data-date="{{ note.uploaded_at_raw }}">
                          <div class="note-info">
-                             <span class="note-title">{{ note.title }}</span>
-                             <span class="note-details">Uploaded: {{ note.uploaded_at.split(' ')[0] }}</span>
+                             <span class="note-title">
+                                 <i class="fas fa-file-alt"></i> {{ note.title }}
+                             </span>
+                             <div class="note-details">
+                                 <span><i class="fas fa-calendar"></i> {{ note.time_ago }}</span>
+                                 <span><i class="fas fa-file-pdf"></i> PDF</span>
+                                 <span><i class="fas fa-download"></i> {{ (note.file_size / 1024 / 1024)|round(2) }} MB</span>
+                             </div>
                          </div>
-                         <a href="{{ url_for('download_note', note_id=note.id) }}" class="button button-download">Download PDF</a>
+                         <a href="{{ url_for('download_note', note_id=note.id) }}" class="button button-download">
+                             <i class="fas fa-download"></i> Download
+                         </a>
                      </li>
                  {% endfor %}
              </ul>
@@ -40,6 +65,41 @@
              <p class="no-content">No specific notes found for this course.</p>
          {% endif %}
      </div>
+     
+     <script>
+        document.getElementById('searchInput').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const notes = document.querySelectorAll('.note-item');
+            
+            notes.forEach(note => {
+                const title = note.dataset.title.toLowerCase();
+                if (title.includes(searchTerm)) {
+                    note.style.display = 'flex';
+                } else {
+                    note.style.display = 'none';
+                }
+            });
+        });
+        
+        document.getElementById('sortSelect').addEventListener('change', function() {
+            const notesList = document.getElementById('notesList');
+            const notes = Array.from(notesList.querySelectorAll('.note-item'));
+            
+            notes.sort((a, b) => {
+                switch(this.value) {
+                    case 'newest':
+                        return new Date(b.dataset.date) - new Date(a.dataset.date);
+                    case 'oldest':
+                        return new Date(a.dataset.date) - new Date(b.dataset.date);
+                    case 'title':
+                        return a.dataset.title.localeCompare(b.dataset.title);
+                    default:
+                        return 0;
+                }
+            });
+            
+            notes.forEach(note => notesList.appendChild(note));
+        });
+    </script>
  </body>
  </html>
- ```

@@ -5,30 +5,72 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - StudyBuddy</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
- </head>
- <body>
-     <div class="container">
-         <header>
-             <h1>StudyBuddy Dashboard</h1>
-             <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
-         </header>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>StudyBuddy Dashboard</h1>
+            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </header>
 
-         <h2 class="welcome-message">Welcome, {{ session.username }}! Please select a department.</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-         <div class="nav-grid">
-             <a href="{{ url_for('show_department_years', department_name='Computer Science Engineering') }}">Computer Science Engineering</a>
-             <a href="{{ url_for('show_department_years', department_name='Electronics and Communication Engineering') }}">Electronics and Communication Engineering</a>
-             <a href="{{ url_for('show_department_years', department_name='Electrical and Electronics Engineering') }}">Electrical and Electronics Engineering</a>
-             <a href="{{ url_for('show_department_years', department_name='Mechanical Engineering') }}">Mechanical Engineering</a>
-             <a href="{{ url_for('show_department_years', department_name='Civil Engineering') }}">Civil Engineering</a>
-         </div>
+        <h2 class="welcome-message">Welcome, {{ session.username }}! Please select a department.</h2>
 
-         {% if session.get('is_admin') %}
-             <div class="admin-link-container">
-                 <a href="{{ url_for('admin_upload_note') }}">Go to Admin Upload Panel</a>
-             </div>
-         {% endif %}
-     </div>
- </body>
- </html>
- ```
+        <div class="nav-grid">
+            {% for department in departments %}
+                <a href="{{ url_for('show_department_years', department_name=department.name) }}">
+                    <i class="{{ department.icon_class }}"></i>
+                    {{ department.name }}
+                    <span class="text-secondary" style="font-size: 0.9rem; margin-top: 8px; font-weight: normal;">
+                        <i class="fas fa-book"></i> {{ department.note_count }} notes available
+                    </span>
+                </a>
+            {% else %}
+                <p class="no-content" style="grid-column: 1 / -1;">No departments with notes found. Admins can upload notes.</p>
+            {% endfor %}
+        </div>
+
+        {% if session.get('is_admin') %}
+            <div class="admin-link-container">
+                <a href="{{ url_for('admin_upload_note') }}" class="button">
+                    <i class="fas fa-upload"></i> Go to Admin Upload Panel
+                </a>
+            </div>
+        {% endif %}
+        
+        <div style="margin-top: 50px;">
+           <h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+               <i class="fas fa-history"></i> Recent Activity
+           </h2>
+           
+           <div style="background: var(--surface-elevated); border-radius: var(--border-radius); padding: 20px; border: 1px solid var(--border-color);">
+               {% if recent_activity %}
+                   {% for activity in recent_activity %}
+                   <div style="display: flex; align-items: center; gap: 15px; padding: 15px; {% if not loop.last %}border-bottom: 1px solid var(--divider-color);{% endif %}">
+                       <div style="background: var(--{{ activity.style_class }}-light); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                           <i class="fas fa-{{ activity.icon }} text-{{ activity.style_class }}"></i>
+                       </div>
+                       <div>
+                           <div>{{ activity.description | safe }}</div>
+                           <div class="text-secondary" style="font-size: 0.9rem;">{{ activity.time_ago }}</div>
+                       </div>
+                   </div>
+                   {% endfor %}
+               {% else %}
+                   <div style="padding: 15px; text-align: center;" class="text-secondary">
+                       No recent activity to display.
+                   </div>
+               {% endif %}
+           </div>
+       </div>
+    </div>
+</body>
+</html>

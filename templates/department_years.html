@@ -5,41 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ department_name }} - StudyBuddy</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
- </head>
- <body>
-     <div class="container">
-         <header>
-             <h1>{{ department_name }}</h1>
-             <div class="nav-links">
-                 <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                 <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
-             </div>
-         </header>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>{{ department_name }}</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </header>
 
-         <p class="breadcrumb"><a href="{{ url_for('dashboard') }}">Departments</a> » {{ department_name }}</p>
+        <p class="breadcrumb"><a href="{{ url_for('dashboard') }}">Departments</a> » {{ department_name }}</p>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; margin-bottom: 30px;">
+           <div>
+               <h2 style="font-weight: 600; font-size: 1.5rem;">Select a Year</h2>
+               <p class="text-secondary" style="margin-top: 5px;">
+                   <i class="fas fa-book"></i> {{ total_notes or 0 }} notes available across all years
+               </p>
+           </div>
+           <div style="display: flex; gap: 15px;">
+               <div style="text-align: center; background: var(--surface-elevated); padding: 12px 20px; border-radius: var(--border-radius-sm);">
+                   <div class="text-secondary">Total Notes</div>
+                   <div style="font-size: 1.8rem; font-weight: 700;">{{ total_notes or 0 }}</div>
+               </div>
+               <div style="text-align: center; background: var(--surface-elevated); padding: 12px 20px; border-radius: var(--border-radius-sm);">
+                   <div class="text-secondary">PYQs</div>
+                   <div style="font-size: 1.8rem; font-weight: 700;">{{ pyq_count or 0 }}</div>
+               </div>
+           </div>
+       </div>
 
-         {% if years %}
-             <ul class="nav-list">
-                 {% for year in years %}
-                     {% if year.year == 5 %}
-                         <li>
-                             <a href="{{ url_for('show_year_courses', department_name=department_name, year_num=year.year) }}" class="pyq-link">
-                                 PYQs (Previous Year Questions)
-                             </a>
-                         </li>
-                     {% else %}
-                         <li>
-                             <a href="{{ url_for('show_year_courses', department_name=department_name, year_num=year.year) }}">
-                                 {{ year.year }}{{ 'st' if year.year == 1 else ('nd' if year.year == 2 else ('rd' if year.year == 3 else 'th')) }} Year
-                             </a>
-                         </li>
-                     {% endif %}
-                 {% endfor %}
-             </ul>
-         {% else %}
-             <p class="no-content">No notes have been uploaded for this department yet.</p>
-         {% endif %}
-     </div>
- </body>
- </html>
- ```
+        {% if years %}
+            <ul class="nav-list">
+                {% for year in years %}
+                    {% if year.year == 5 %}
+                        <li>
+                            <a href="{{ url_for('show_year_courses', department_name=department_name, year_num=year.year) }}" class="pyq-link">
+                                <i class="fas fa-question-circle"></i> PYQs (Previous Year Questions)
+                            </a>
+                        </li>
+                    {% else %}
+                        <li>
+                            <a href="{{ url_for('show_year_courses', department_name=department_name, year_num=year.year) }}">
+                                <i class="fas fa-calendar-alt"></i> {{ year.year }}{{ 'st' if year.year == 1 else ('nd' if year.year == 2 else ('rd' if year.year == 3 else 'th')) }} Year
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="no-content">No notes have been uploaded for this department yet.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

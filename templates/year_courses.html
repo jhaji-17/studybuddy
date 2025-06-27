@@ -3,45 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>{{ department_name }} - {{ 'PYQs' if year_num == 5 else year_num ~ ('st' if year_num == 1 else ('nd' if year_num == 2 else ('rd' if year_num == 3 else 'th'))) ~ ' Year' }}</title>
+<title>{{ department_name }} - {% if year_num == 5 %}PYQs{% else %}{{ year_num }}{{ 'st' if year_num == 1 else ('nd' if year_num == 2 else ('rd' if year_num == 3 else 'th')) }} Year{% endif %}</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
- </head>
- <body>
-     <div class="container">
-         <header>
-             <h1>
-                 {% if year_num == 5 %}
-                     Previous Year Questions
-                 {% else %}
-                     {{ year_num }}{{ 'st' if year_num == 1 else ('nd' if year_num == 2 else ('rd' if year_num == 3 else 'th')) }} Year Courses
-                 {% endif %}
-             </h1>
-             <div class="nav-links">
-                 <a href="{{ url_for('dashboard') }}">Dashboard</a>
-                 <a href="{{ url_for('logout') }}" class="logout-link">Logout</a>
-             </div>
-         </header>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>
+                {% if year_num == 5 %}
+                    Previous Year Questions
+                {% else %}
+                    {{ year_num }}{{ 'st' if year_num == 1 else ('nd' if year_num == 2 else ('rd' if year_num == 3 else 'th')) }} Year Courses
+                {% endif %}
+            </h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </header>
 
-         <p class="breadcrumb">
-             <a href="{{ url_for('dashboard') }}">Departments</a> » 
-             <a href="{{ url_for('show_department_years', department_name=department_name) }}">{{ department_name }}</a> »
-             {% if year_num == 5 %} PYQs {% else %} {{ year_num }} Year {% endif %}
-         </p>
-
-         {% if courses %}
-             <ul class="nav-list">
-                 {% for course in courses %}
-                     <li>
-                         <a href="{{ url_for('show_course_notes', department_name=department_name, year_num=year_num, course_name=course.course_name) }}">
-                             {{ course.course_name }}
-                         </a>
-                     </li>
-                 {% endfor %}
-             </ul>
-         {% else %}
-             <p class="no-content">No courses found for this year in this department.</p>
-         {% endif %}
-     </div>
- </body>
- </html>
- ```
+        <p class="breadcrumb">
+            <a href="{{ url_for('dashboard') }}">Departments</a> » 
+            <a href="{{ url_for('show_department_years', department_name=department_name) }}">{{ department_name }}</a> »
+            {% if year_num == 5 %} PYQs {% else %} {{ year_num }} Year {% endif %}
+        </p>
+        
+        {% if courses %}
+            <div class="nav-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); margin-top: 30px;">
+                {% for course in courses %}
+                    <a href="{{ url_for('show_course_notes', department_name=department_name, year_num=year_num, course_name=course.course_name) }}"
+                       class="course-card">
+                        <div style="font-size: 2.5rem; margin-bottom: 15px; color: var(--primary-color);">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h3>{{ course.course_name }}</h3>
+                        <div class="text-secondary" style="margin-top: 8px;">
+                            <i class="fas fa-file-alt"></i> {{ course.note_count }} notes
+                        </div>
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="no-content">No courses found for this year in this department.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
