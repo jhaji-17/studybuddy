@@ -11,7 +11,12 @@
     <div class="container">
         <header>
             <h1>StudyBuddy Dashboard</h1>
-            <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            <!-- START OF MODIFICATION -->
+            <div class="header-right">
+                <span class="contact-info">Contact us: <a href="mailto:example@gmail.com">example@gmail.com</a></span>
+                <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+            <!-- END OF MODIFICATION -->
         </header>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -22,7 +27,12 @@
             {% endif %}
         {% endwith %}
 
-        <h2 class="welcome-message">Welcome, {{ session.username }}! Please select a department.</h2>
+        <div class="welcome-section">
+            <div class="welcome-message">
+                <h2>Welcome, {{ session.username }}!</h2>
+                <p>Please select a department to get started.</p>
+            </div>
+        </div>
 
         <div class="nav-grid">
             {% for department in departments %}
@@ -34,38 +44,43 @@
                     </span>
                 </a>
             {% else %}
-                <p class="no-content" style="grid-column: 1 / -1;">No departments with notes found. Admins can upload notes.</p>
+                <div class="no-content" style="grid-column: 1 / -1;">
+                    <i class="fas fa-folder-open"></i>
+                    No departments with notes found. Admins can upload notes to get started.
+                </div>
             {% endfor %}
         </div>
 
         {% if session.get('is_admin') %}
             <div class="admin-link-container">
-                <a href="{{ url_for('admin_upload_note') }}" class="button">
-                    <i class="fas fa-upload"></i> Go to Admin Upload Panel
+                <a href="{{ url_for('admin_upload_note') }}" class="button button-secondary">
+                    <i class="fas fa-shield-alt"></i> Go to Admin Panel
                 </a>
             </div>
         {% endif %}
         
         <div style="margin-top: 50px;">
            <h2 style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-               <i class="fas fa-history"></i> Recent Activity
+               <i class="fas fa-history" style="color: var(--text-secondary);"></i> Recent Activity
            </h2>
            
-           <div style="background: var(--surface-elevated); border-radius: var(--border-radius); padding: 20px; border: 1px solid var(--border-color);">
+           <div class="note-list">
                {% if recent_activity %}
                    {% for activity in recent_activity %}
-                   <div style="display: flex; align-items: center; gap: 15px; padding: 15px; {% if not loop.last %}border-bottom: 1px solid var(--divider-color);{% endif %}">
-                       <div style="background: var(--{{ activity.style_class }}-light); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                           <i class="fas fa-{{ activity.icon }} text-{{ activity.style_class }}"></i>
-                       </div>
-                       <div>
-                           <div>{{ activity.description | safe }}</div>
-                           <div class="text-secondary" style="font-size: 0.9rem;">{{ activity.time_ago }}</div>
-                       </div>
-                   </div>
+                   <li style="padding: 15px 24px; box-shadow: none;">
+                        <div class="note-info" style="padding-right: 0;">
+                            <div class="note-title" style="font-size: 1.05rem; font-weight: 500;">
+                                <i class="fas fa-{{ activity.icon }}" style="color: var(--text-secondary);"></i>
+                                <span>{{ activity.description | safe }}</span>
+                            </div>
+                            <div class="note-details" style="font-size: 0.9rem; padding-left: 34px;">
+                                <span><i class="far fa-clock"></i> {{ activity.time_ago }}</span>
+                            </div>
+                        </div>
+                   </li>
                    {% endfor %}
                {% else %}
-                   <div style="padding: 15px; text-align: center;" class="text-secondary">
+                    <div class="no-content" style="margin: 0; padding: 40px;">
                        No recent activity to display.
                    </div>
                {% endif %}
