@@ -3,38 +3,63 @@ import os
 import datetime
 import humanize
 import random
+import sys
 from datetime import timedelta
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, session, g, flash, send_from_directory
-from flask_mail import Mail, Message
-
-# --- For loading environment variables ---
 from dotenv import load_dotenv
+
+# --- NEW: Import SendGrid libraries ---
+import sendgrid
+from sendgrid.helpers.mail import Mail
+
+# Load environment variables from .env file
 load_dotenv()
-# ----------------------------------------
 
 app = Flask(__name__)
-# Load secret key from environment variable. The second argument is a default for local development.
-app.secret_key = os.getenv('SECRET_KEY', 'a_default_fallback_key_for_development') 
-DATABASE = 'users.db'
-UPLOAD_FOLDER = 'uploads'
+
+# --- Configuration Section ---
+
+# Set a secret key for session management
+app.secret_key = os.getenv('SECRET_KEY', 'a_default_fallback_key_for_development')
+
+# Define the absolute path for the database
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE = os.path.join(BASE_DIR, 'users.db')
+
+# Configure file uploads
+UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
 ALLOWED_EXTENSIONS = {'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# --- SECURE SENDGRID CONFIGURATION using environment variables ---
-app.config['MAIL_SERVER'] = 'smtp.sendgrid.net'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = 'apikey'
-app.config['MAIL_PASSWORD'] = os.getenv('SENDGRID_API_KEY') # Reads securely from .env
-app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_DEFAULT_SENDER') # Reads securely from .env
-# -------------------------------------------------------------
 
-mail = Mail(app)
+# --- REMOVED: Flask-Mail Configuration and Initialization is no longer needed ---
+# app.config['MAIL_SERVER'] = ...
+# mail = Mail(app)
+# ---
+
+
+# --- NEW: Helper function to send email via SendGrid API ---
+def send_verification_email(recipient_email, username, verification_code):
+    message = Mail(
+        from_email=os.getenv('MAIL_DEFAULT_SENDER'),
+        to_emails=recipient_email,
+        subject='Your StudyBuddy Verification Code',
+        plain_text_content=f"Hello {username},\n\nWelcome to StudyBuddy!\n\nYour verification code is: {verification_code}\n\nThis code will expire in 15 minutes.\n\nThank you,\nThe StudyBuddy Team"
+    )
+    try:
+        sg = sendgrid.SendGridAPIClient(os.getenv('SENDGRID_API_KEY'))
+        response = sg.send(message)
+        print(f"SendGrid response status code: {response.status_code}")
+        return True
+    except Exception as e:
+        print(f"Error sending email with SendGrid API: {e}", file=sys.stderr)
+        return False
+
 
 # --- Database Helper Functions (Unchanged) ---
 def get_db():
+    # ... (rest of the function is the same)
     db = getattr(g, '_database', None)
     if db is None:
         db = g._database = sqlite3.connect(DATABASE, detect_types=sqlite3.PARSE_DECLTYPES)
@@ -43,11 +68,14 @@ def get_db():
 
 @app.teardown_appcontext
 def close_connection(exception):
+    # ... (this function is the same)
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
 
-# --- Database Initialization (Unchanged) ---
+# ... (all your other functions like init_db, log_activity, etc. are unchanged)
+# ...
+# --- Database Initialization Command ---
 def init_db():
     with app.app_context():
         db = get_db()
@@ -57,16 +85,17 @@ def init_db():
 
 @app.cli.command('init-db')
 def init_db_command():
+    """Clears the existing data and creates new tables."""
     init_db()
     print('Initialized the database.')
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
         print(f'Created upload folder at: {UPLOAD_FOLDER}')
 
+# --- Helper Functions ---
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-# --- Activity Logging Helper (Unchanged) ---
 def log_activity(user_id, action_type, description):
     db = get_db()
     now_utc = datetime.datetime.utcnow()
@@ -76,12 +105,12 @@ def log_activity(user_id, action_type, description):
     )
     db.commit()
 
-# --- Routes (Unchanged) ---
-
+# --- Main Routes ---
 @app.route('/')
 def home():
     if 'user_id' in session: return redirect(url_for('dashboard'))
     return render_template('home.html')
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -100,6 +129,7 @@ def register():
             error = 'Password must be at least 8 characters long.'
         elif username.lower() == 'admin':
             error = 'The username "admin" is reserved.'
+
         if error is None:
             db = get_db()
             if db.execute("SELECT id FROM users WHERE username = ?", (username,)).fetchone() is not None:
@@ -109,38 +139,40 @@ def register():
             else:
                 verification_code = str(random.randint(100000, 999999))
                 code_expiry = datetime.datetime.utcnow() + timedelta(minutes=15)
-                try:
+
+                # --- MODIFIED: Use the new helper function ---
+                email_sent = send_verification_email(email, username, verification_code)
+
+                if email_sent:
                     db.execute(
                         "INSERT INTO users (username, email, password, verification_code, code_expiry) VALUES (?, ?, ?, ?, ?)",
                         (username, email, password, verification_code, code_expiry)
                     )
                     db.commit()
-                    msg = Message('Your StudyBuddy Verification Code', recipients=[email])
-                    msg.body = f"Hello {username},\n\nWelcome to StudyBuddy!\n\nYour verification code is: {verification_code}\n\nThis code will expire in 15 minutes.\n\nThank you,\nThe StudyBuddy Team"
-                    mail.send(msg)
                     session['username_to_verify'] = username
                     flash('Registration successful! Please check your email for a verification code.', 'success')
                     return redirect(url_for('verify'))
-                except Exception as e:
-                    print(f"Error during registration or email sending: {e}")
+                else:
                     error = "An error occurred. Could not send verification email. Please try again later."
         if error:
             flash(error, 'error')
     return render_template('register.html')
 
+# ... (The rest of your routes: /verify, /login, /dashboard, etc., are unchanged) ...
+# ... (Paste the rest of your unchanged routes here) ...
 @app.route('/verify', methods=['GET', 'POST'])
 def verify():
-    if 'user_id' in session:
-        return redirect(url_for('dashboard'))
+    if 'user_id' in session: return redirect(url_for('dashboard'))
     if 'username_to_verify' not in session:
         flash('Your verification session has expired. Please register again.', 'warning')
         return redirect(url_for('register'))
+
     username = session['username_to_verify']
     if request.method == 'POST':
         submitted_code = request.form.get('code')
         error = None
-        if not submitted_code or len(submitted_code) != 6:
-            error = "Please enter the 6-digit code."
+        if not submitted_code or not submitted_code.isdigit() or len(submitted_code) != 6:
+            error = "Please enter a valid 6-digit code."
         else:
             db = get_db()
             user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
@@ -151,22 +183,18 @@ def verify():
                 session.pop('username_to_verify', None)
                 return redirect(url_for('login'))
             elif user['code_expiry'] < datetime.datetime.utcnow():
-                error = "Your verification code has expired. Please request a new one."
+                error = "Your verification code has expired. Please register again to get a new one."
             elif user['verification_code'] != submitted_code:
                 error = "The verification code is incorrect. Please try again."
             else:
                 try:
-                    db.execute(
-                        "UPDATE users SET is_verified = 1, verification_code = NULL, code_expiry = NULL WHERE username = ?",
-                        (username,)
-                    )
+                    db.execute("UPDATE users SET is_verified = 1, verification_code = NULL, code_expiry = NULL WHERE username = ?", (username,))
                     db.commit()
                     flash('Your account has been successfully verified! You can now log in.', 'success')
                     session.pop('username_to_verify', None)
                     return redirect(url_for('login'))
                 except sqlite3.Error as e:
-                    print(f"Database error during verification: {e}")
-                    error = "A database error occurred. Please try again."
+                    error = "A database error occurred during verification. Please try again."
         if error:
             flash(error, 'error')
     return render_template('verify.html')
@@ -180,13 +208,16 @@ def login():
         error = None
         db = get_db()
         user = db.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
+
         if user is None or user['password'] != password_attempt:
             error = 'Incorrect username or password.'
         elif not user['is_verified']:
-            error = "Your account has not been verified. Please check your email for the verification code."
+            error = "Your account has not been verified. A new verification code has been sent."
+            # Logic to resend code could be added here if desired
             session['username_to_verify'] = user['username']
             flash(error, 'warning')
             return redirect(url_for('verify'))
+
         if error is None:
             session.clear()
             session['user_id'] = user['id']
@@ -195,6 +226,7 @@ def login():
             log_activity(user['id'], 'login', 'You logged in to StudyBuddy')
             flash('Login successful!', 'success')
             return redirect(url_for('dashboard'))
+
         flash(error, 'error')
     return render_template('login.html')
 
@@ -202,6 +234,7 @@ def login():
 def dashboard():
     if 'user_id' not in session: return redirect(url_for('login'))
     db = get_db()
+
     depts_with_counts = db.execute("SELECT department, COUNT(id) as note_count FROM notes GROUP BY department").fetchall()
     department_info = {
         'Computer Science Engineering': {'icon_class': 'fas fa-laptop-code'},
@@ -211,17 +244,19 @@ def dashboard():
         'Civil Engineering': {'icon_class': 'fas fa-hard-hat'}
     }
     departments = []
-    for dept_name, info in department_info.items():
+    for dept_name in department_info:
         count_row = next((d for d in depts_with_counts if d['department'] == dept_name), None)
         departments.append({
             'name': dept_name,
-            'icon_class': info['icon_class'],
+            'icon_class': department_info[dept_name]['icon_class'],
             'note_count': count_row['note_count'] if count_row else 0
         })
+
     activities_from_db = db.execute(
         "SELECT action_type, description, timestamp FROM activity WHERE user_id = ? ORDER BY timestamp DESC LIMIT 5",
         (session['user_id'],)
     ).fetchall()
+
     recent_activity = []
     now_utc = datetime.datetime.utcnow()
     for act in activities_from_db:
@@ -233,6 +268,7 @@ def dashboard():
             'description': act['description'],
             'time_ago': humanize.naturaltime(now_utc - act['timestamp'])
         })
+
     return render_template('dashboard.html', departments=departments, recent_activity=recent_activity)
 
 @app.route('/department/<department_name>')
@@ -266,7 +302,7 @@ def show_course_notes(department_name, year_num, course_name):
             'id': note['id'],
             'title': note['title'],
             'file_size': note['file_size'],
-            'uploaded_at_raw': note['uploaded_at'].isoformat(), 
+            'uploaded_at_raw': note['uploaded_at'].isoformat(),
             'time_ago': humanize.naturaltime(now_utc - note['uploaded_at'])
         })
     return render_template('course_notes.html', department_name=department_name, year_num=year_num, course_name=course_name, notes=notes_for_template)
@@ -283,7 +319,7 @@ def download_note(note_id):
         log_activity(session['user_id'], 'download', f"You downloaded <strong>{note['title']}.pdf</strong>")
         return send_from_directory(app.config['UPLOAD_FOLDER'], note['filename'], as_attachment=True)
     except FileNotFoundError:
-        flash('File not found on server.', 'error')
+        flash('File not found on server. It may have been moved or deleted.', 'error')
         return redirect(url_for('dashboard'))
 
 @app.route('/logout')
@@ -330,4 +366,6 @@ def admin_upload_note():
     return render_template('admin_upload.html')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
+    app.run(debug=True)
