@@ -365,6 +365,52 @@ def admin_upload_note():
             flash('Invalid file type. Only PDF files are allowed.', 'error')
     return render_template('admin_upload.html')
 
+@app.route('/admin/manage-users')
+def manage_users():
+    # Ensure only admins can access this page
+    if not session.get('is_admin'):
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    db = get_db()
+    # CORRECTED QUERY: Removed the non-existent 'created_at' column
+    users = db.execute(
+        "SELECT id, username, email, password, is_verified, is_admin FROM users ORDER BY id ASC"
+    ).fetchall()
+    
+    return render_template('manage_users.html', users=users)
+
+
+# --- START: PASTE THE NEW DELETE FUNCTION HERE ---
+
+@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
+def delete_user(user_id):
+    # Ensure only admins can perform this action
+    if not session.get('is_admin'):
+        flash('You do not have permission to perform this action.', 'danger')
+        return redirect(url_for('dashboard'))
+
+    # Prevent admin from deleting their own account
+    if user_id == session.get('user_id'):
+        flash('You cannot delete your own account.', 'error')
+        return redirect(url_for('manage_users'))
+        
+    db = get_db()
+    user_to_delete = db.execute("SELECT username FROM users WHERE id = ?", (user_id,)).fetchone()
+    
+    if user_to_delete:
+        # Thanks to "ON DELETE CASCADE" in your schema, deleting a user
+        # will automatically delete their notes and activity. We only need this one command.
+        db.execute("DELETE FROM users WHERE id = ?", (user_id,))
+        db.commit()
+        flash(f"User '{user_to_delete['username']}' and all their data have been successfully deleted.", 'success')
+    else:
+        flash("User not found.", 'error')
+
+    return redirect(url_for('manage_users'))
+
+# --- END: PASTE THE NEW DELETE FUNCTION HERE ---
+
 if __name__ == '__main__':
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
