@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Manage Users</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* A few simple styles to make the table look good without touching the main CSS file */
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: var(--box-shadow-soft);
+        }
+        .user-table th, .user-table td {
+            border: 1px solid var(--border-color);
+            padding: 12px 15px;
+            text-align: left;
+            vertical-align: middle; /* Ensures content is vertically centered */
+        }
+        .user-table thead {
+            background-color: var(--divider-color);
+        }
+        .user-table th {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .user-table tbody tr:nth-child(even) {
+            background-color: #fcfdff;
+        }
+        .user-table tbody tr:hover {
+            background-color: var(--primary-light);
+        }
+        .status-yes {
+            color: var(--success-color);
+            font-weight: 600;
+        }
+        .status-no {
+            color: var(--danger-color);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Manage Users</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('logout') }}" class="logout-link"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </header>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="table-container">
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Password</th> <!-- MODIFIED: Added this header -->
+                        <th>Verified?</th>
+                        <th>Admin?</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user['id'] }}</td>
+                        <td>{{ user['username'] }}</td>
+                        <td>{{ user['email'] }}</td>
+                        <td>{{ user['password'] }}</td> <!-- MODIFIED: Added this cell -->
+                        <td>
+                            {% if user['is_verified'] %}
+                                <span class="status-yes">Yes</span>
+                            {% else %}
+                                <span class="status-no">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user['is_admin'] %}
+                                <span class="status-yes">Yes</span>
+                            {% else %}
+                                <span class="status-no">No</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user['id'] != session['user_id'] %}
+                                <form action="{{ url_for('delete_user', user_id=user['id']) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete user \'{{ user.username }}\'? This cannot be undone.');">
+                                    <button type="submit" class="button" style="background-color: var(--danger-color); padding: 8px 16px; font-size: 0.9rem;">
+                                        <i class="fas fa-trash-alt"></i> Delete
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="text-secondary" style="font-style: italic;">(Current User)</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <!-- MODIFIED: Colspan is now 7 because we added a column -->
+                        <td colspan="7" style="text-align: center;" class="text-secondary">No users found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

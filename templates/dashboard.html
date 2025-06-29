@@ -37,12 +37,16 @@
                 <p class="no-content" style="grid-column: 1 / -1;">No departments with notes found. Admins can upload notes.</p>
             {% endfor %}
         </div>
-
         {% if session.get('is_admin') %}
-            <div class="admin-link-container">
+            <div class="admin-link-container" style="display: flex; gap: 15px; justify-content: center;">
                 <a href="{{ url_for('admin_upload_note') }}" class="button">
                     <i class="fas fa-upload"></i> Go to Admin Upload Panel
                 </a>
+                <!-- START: PASTE THIS NEW LINK HERE -->
+                <a href="{{ url_for('manage_users') }}" class="button" style="background: var(--gradient-secondary);">
+                    <i class="fas fa-users-cog"></i> Manage Users
+                </a>
+                <!-- END: PASTE THIS NEW LINK HERE -->
             </div>
         {% endif %}
         
