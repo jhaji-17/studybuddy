@@ -41,6 +41,3 @@ CREATE TABLE activity (
     FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
--- Default admin user (Unchanged)
-INSERT INTO users (username, email, password, is_admin, is_verified) 
-VALUES ('admin', 'admin@example.com', 'password', 1, 1);
