@@ -134,3 +134,8 @@ users.db
 # especially if they are large or numerous. Git is for code, not large binary files typically)
 # If your notes are small and you want them version controlled, remove this.
 uploads/
+
+# --- Google API Credentials ---
+# These files should NOT be in version control.
+credentials.json
+token.json
