@@ -16,17 +16,16 @@ CREATE TABLE users (
 );
 
 -- Notes table with CASCADE DELETE
+-- Notes table with CASCADE DELETE
 CREATE TABLE notes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     department TEXT NOT NULL,
     year INTEGER NOT NULL,
     course_name TEXT NOT NULL,
-    filename TEXT UNIQUE NOT NULL,
-    file_size INTEGER NOT NULL,
+    google_drive_file_id TEXT NOT NULL, -- <<< ADD THIS LINE
     uploader_id INTEGER NOT NULL,
     uploaded_at TIMESTAMP NOT NULL,
-    -- THIS LINE IS MODIFIED
     FOREIGN KEY (uploader_id) REFERENCES users (id) ON DELETE CASCADE
 );
 
