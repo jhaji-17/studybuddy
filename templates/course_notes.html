@@ -52,7 +52,7 @@
                              <div class="note-details">
                                  <span><i class="fas fa-calendar"></i> {{ note.time_ago }}</span>
                                  <span><i class="fas fa-file-pdf"></i> PDF</span>
-                                 <span><i class="fas fa-download"></i> {{ (note.file_size / 1024 / 1024)|round(2) }} MB</span>
+                                 
                              </div>
                          </div>
                          <a href="{{ url_for('download_note', note_id=note.id) }}" class="button button-download">

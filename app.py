@@ -4,14 +4,19 @@ import datetime
 import humanize
 import random
 import sys
+
+from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
+from googleapiclient.http import MediaIoBaseUpload
+import io
+import sendgrid
+from sendgrid.helpers.mail import Mail
 from datetime import timedelta
 from werkzeug.utils import secure_filename
 from flask import Flask, render_template, request, redirect, url_for, session, g, flash, send_from_directory
 from dotenv import load_dotenv
 
 # --- NEW: Import SendGrid libraries ---
-import sendgrid
-from sendgrid.helpers.mail import Mail
 
 # Load environment variables from .env file
 load_dotenv()
@@ -33,10 +38,14 @@ ALLOWED_EXTENSIONS = {'pdf'}
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-# --- REMOVED: Flask-Mail Configuration and Initialization is no longer needed ---
-# app.config['MAIL_SERVER'] = ...
-# mail = Mail(app)
-# ---
+DRIVE_FOLDER_ID = '1lIW_kaHkOBBqCkwPU-EljoCYHJ9pz96j' 
+
+def get_drive_service():
+    """Creates and returns an authenticated Google Drive service object."""
+    # Note: The 'token.json' file must be in the same directory as this script.
+    creds = Credentials.from_authorized_user_file('token.json', ['https://www.googleapis.com/auth/drive.file'])
+    service = build('drive', 'v3', credentials=creds)
+    return service
 
 
 # --- NEW: Helper function to send email via SendGrid API ---
@@ -292,7 +301,7 @@ def show_course_notes(department_name, year_num, course_name):
     if 'user_id' not in session: return redirect(url_for('login'))
     db = get_db()
     notes_from_db = db.execute(
-        "SELECT id, title, uploaded_at, file_size FROM notes WHERE department = ? AND year = ? AND course_name = ? ORDER BY uploaded_at DESC",
+        "SELECT id, title, uploaded_at FROM notes WHERE department = ? AND year = ? AND course_name = ? ORDER BY uploaded_at DESC",
         (department_name, year_num, course_name)
     ).fetchall()
     notes_for_template = []
@@ -301,25 +310,54 @@ def show_course_notes(department_name, year_num, course_name):
         notes_for_template.append({
             'id': note['id'],
             'title': note['title'],
-            'file_size': note['file_size'],
             'uploaded_at_raw': note['uploaded_at'].isoformat(),
             'time_ago': humanize.naturaltime(now_utc - note['uploaded_at'])
         })
     return render_template('course_notes.html', department_name=department_name, year_num=year_num, course_name=course_name, notes=notes_for_template)
 
+# --- PASTE THIS NEW DOWNLOAD FUNCTION ---
+
 @app.route('/download/<int:note_id>')
 def download_note(note_id):
-    if 'user_id' not in session: return redirect(url_for('login'))
+    if 'user_id' not in session: 
+        return redirect(url_for('login'))
+        
     db = get_db()
-    note = db.execute("SELECT filename, title FROM notes WHERE id = ?", (note_id,)).fetchone()
+    # 1. Fetch the note, but now we need the 'google_drive_file_id'
+    note = db.execute(
+        "SELECT google_drive_file_id, title FROM notes WHERE id = ?", (note_id,)
+    ).fetchone()
+    
     if note is None:
         flash('Note not found.', 'error')
         return redirect(url_for('dashboard'))
+            
     try:
-        log_activity(session['user_id'], 'download', f"You downloaded <strong>{note['title']}.pdf</strong>")
-        return send_from_directory(app.config['UPLOAD_FOLDER'], note['filename'], as_attachment=True)
-    except FileNotFoundError:
-        flash('File not found on server. It may have been moved or deleted.', 'error')
+        # 2. Connect to the Google Drive service
+        service = get_drive_service()
+        file_id = note['google_drive_file_id']
+        
+        # 3. Ask the API for the file's metadata, specifically its web link
+        # This link allows viewing/downloading in the browser.
+        file_info = service.files().get(
+            fileId=file_id, 
+            fields='webViewLink'
+        ).execute()
+        
+        download_link = file_info.get('webViewLink')
+
+        if download_link:
+            # 4. Log the activity like before
+            log_activity(session['user_id'], 'download', f"You downloaded <strong>{note['title']}.pdf</strong>")
+            # 5. Redirect the user's browser to the Google Drive link
+            return redirect(download_link)
+        else:
+            flash('Could not generate a download link for this file.', 'error')
+            return redirect(url_for('dashboard'))
+
+    except Exception as e:
+        # A generic error for when the API fails or file doesn't exist on Drive
+        flash(f"An error occurred retrieving the file from Google Drive: {e}", 'error')
         return redirect(url_for('dashboard'))
 
 @app.route('/logout')
@@ -328,41 +366,74 @@ def logout():
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
 
+# --- PASTE THIS ENTIRE NEW FUNCTION ---
+
 @app.route('/admin/upload', methods=['GET', 'POST'])
 def admin_upload_note():
     if not session.get('is_admin'):
         flash('You do not have permission to access this page.', 'danger')
         return redirect(url_for('dashboard'))
+    
     if request.method == 'POST':
+        # --- This part is the same ---
         file = request.files.get('pdf_file')
         title, department, year, course_name = request.form.get('title'), request.form.get('department'), request.form.get('year'), request.form.get('course_name')
+        
         if not all([file, title, department, year, course_name]) or file.filename == '':
             flash('All fields and a file are required.', 'error')
             return redirect(request.url)
+        # --- End of same part ---
+
+        # --- This is the new logic block ---
         if allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            if os.path.exists(file_path):
-                flash(f"File '{filename}' already exists. Please rename it.", 'error')
-                return redirect(request.url)
-            file.save(file_path)
-            file_size = os.path.getsize(file_path)
-            db = get_db()
             try:
+                # 1. Connect to the Google Drive API
+                service = get_drive_service()
+                
+                # 2. Prepare file metadata for Google Drive
+                file_metadata = {
+                    'name': secure_filename(file.filename),
+                    'parents': [DRIVE_FOLDER_ID]
+                }
+                
+                # 3. Read the file from Flask's request into an in-memory buffer
+                file_stream = io.BytesIO(file.read())
+                
+                # 4. Create the media upload object for the API
+                media = MediaIoBaseUpload(file_stream, mimetype=file.mimetype, resumable=True)
+                
+                # 5. Execute the upload to Google Drive
+                uploaded_file = service.files().create(
+                    body=file_metadata,
+                    media_body=media,
+                    fields='id'  # Ask API to only return the new file's ID
+                ).execute()
+                
+                # 6. Get the new file_id from the API response
+                file_id = uploaded_file.get('id')
+
+                # 7. Save the note's metadata and the new file_id to our database
+                db = get_db()
                 now_utc = datetime.datetime.utcnow()
                 db.execute(
-                    "INSERT INTO notes (title, department, year, course_name, filename, file_size, uploader_id, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                    (title, department, int(year), course_name, filename, file_size, session['user_id'], now_utc)
+                    "INSERT INTO notes (title, department, year, course_name, google_drive_file_id, uploader_id, uploaded_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    (title, department, int(year), course_name, file_id, session['user_id'], now_utc)
                 )
                 db.commit()
+
+                # 8. Log the activity and show a success message
                 log_activity(session['user_id'], 'upload', f"You uploaded <strong>{title}.pdf</strong>")
-                flash(f"Note '{title}' uploaded successfully!", 'success')
+                flash(f"Note '{title}' uploaded successfully to Google Drive!", 'success')
                 return redirect(url_for('admin_upload_note'))
-            except sqlite3.Error as e:
-                flash(f"Database error: {e}", 'error')
-                os.remove(file_path)
+
+            except Exception as e:
+                # A generic error handler for API or database issues
+                flash(f"An error occurred: {e}", "error")
+                return redirect(request.url)
         else:
             flash('Invalid file type. Only PDF files are allowed.', 'error')
+            
+    # This is the GET request part, which remains the same
     return render_template('admin_upload.html')
 
 @app.route('/admin/manage-users')
